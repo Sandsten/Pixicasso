@@ -223,7 +223,7 @@ model = load_vgg_model(VGG_MODEL, input_image)
 #cv2.destroyAllWindows()
 
 #Do the magic
-sess.run(tf.initialize_all_variables())
+#sess.run(tf.global_variables_initializer())
 # Construct content_loss using content_image.
 sess.run(model['input'].assign(content_img))
 content_loss = content_loss_func(sess, model)
@@ -243,7 +243,7 @@ total_loss = BETA * content_loss + ALPHA * style_loss
 optimizer = tf.train.AdamOptimizer(2.0)
 train_step = optimizer.minimize(total_loss)
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 sess.run(model['input'].assign(input_image))
 for it in range(ITERATIONS):
     sess.run(train_step)
