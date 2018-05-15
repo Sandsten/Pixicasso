@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from skimage.transform import resize
+# from skimage.transform import resize
 
 ########## CONSTANTS ########## 
 IMG_WIDTH = 300
