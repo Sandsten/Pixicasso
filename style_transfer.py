@@ -10,15 +10,10 @@ import matplotlib.pyplot as plt
 # from skimage.transform import resize
 
 ########## CONSTANTS ########## 
-IMG_WIDTH = 300
-IMG_HEIGHT = 300
-IMG_CHANNELS = 3
 MAX_SIZE = 300
-
-# Weight on style loss.
-ALPHA = 100
-# Weight on content loss.
-BETA = 5
+ALPHA = 100 # Weight on style loss.
+BETA = 5 # Weight on content loss.
+ITERATIONS = 500 # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -38,13 +33,11 @@ def parse_args():
 	args = parser.parse_args()
 	return args
 
-def checkImage(img, path):
-	if img is None:
-		sys.exit("Error: Invalid path {}\nExiting the program.\n".format(path))
+#def checkImage(img, path):
+#	if img is None: sys.exit("Error: Invalid path {}\nExiting the program.\n".format(path))
 
 def read_content_image(path):
 	img = scipy.misc.imread(path)
-	checkImage(img, path)
 
 	h, w, d = img.shape
 	mx = MAX_SIZE
@@ -63,12 +56,10 @@ def read_content_image(path):
 	return img
 
 def read_style_image(path, content_img):
-	#img = cv2.imread(path)
 	img = scipy.misc.imread(path)
-	checkImage(img, path)
 
 	# Resize to have the same dimension as the content image
-	b, h, w, d = content_img.shape
+	_, h, w, _ = content_img.shape
 	img = cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_AREA)
 	# Adding an extra dimension for convnet input 
 	img = np.reshape(img, ((1,) + img.shape))
@@ -78,16 +69,16 @@ def read_style_image(path, content_img):
 
 def save_image(filename, img):
 	img = img + MEAN_VALUES
-	img = img[0]
+	img = img[0] # Remove the extra dimension that we added at the beginning
 	img = np.clip(img, 0, 255).astype('uint8')
 	scipy.misc.imsave(filename, img)
 
 
-def load_vgg_model(path):
+def load_vgg_model(path, input_image):
     vgg = sio.loadmat(path)
     vgg_layers = vgg['layers']
 
-    def _weights(layer, expected_layer_name):
+    def get_weights(layer, expected_layer_name):
         """
         Return the weights and bias from the VGG model for a given layer.
         """
@@ -98,32 +89,19 @@ def load_vgg_model(path):
         assert layer_name == expected_layer_name
         return W, b
 
-    def _relu(conv2d_layer):
-        """
-        Return the RELU function wrapped over a TensorFlow layer. Expects a
-        Conv2d layer input.
-        """
-        return tf.nn.relu(conv2d_layer)
-
-    def _conv2d(prev_layer, layer, layer_name):
-        """
-        Return the Conv2D layer using the weights, biases from the VGG
-        model at 'layer'.
-        """
-        W, b = _weights(layer, layer_name)
-        W = tf.constant(W)
-        b = tf.constant(np.reshape(b, (b.size)))
-        return tf.nn.conv2d(
-            prev_layer, filter=W, strides=[1, 1, 1, 1], padding='SAME') + b
-
-    def _conv2d_relu(prev_layer, layer, layer_name):
+    def conv2d_relu(prev_layer, layer, layer_name):
         """
         Return the Conv2D + RELU layer using the weights, biases from the VGG
         model at 'layer'.
         """
-        return _relu(_conv2d(prev_layer, layer, layer_name))
+        W, b = get_weights(layer, layer_name)
+        W = tf.constant(W)
+        b = tf.constant(np.reshape(b, (b.size)))
+        return tf.nn.relu(tf.nn.conv2d(
+            prev_layer, filter=W, strides=[1, 1, 1, 1], padding='SAME') + b)
 
-    def _avgpool(prev_layer):
+
+    def avgpool(prev_layer):
         """
         Return the AveragePooling layer.
         """
@@ -131,28 +109,29 @@ def load_vgg_model(path):
 
     # Constructs the graph model.
     graph = {}
-    graph['input']   = tf.Variable(np.zeros((1, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)), dtype = 'float32')
-    graph['conv1_1']  = _conv2d_relu(graph['input'], 0, 'conv1_1')
-    graph['conv1_2']  = _conv2d_relu(graph['conv1_1'], 2, 'conv1_2')
-    graph['avgpool1'] = _avgpool(graph['conv1_2'])
-    graph['conv2_1']  = _conv2d_relu(graph['avgpool1'], 5, 'conv2_1')
-    graph['conv2_2']  = _conv2d_relu(graph['conv2_1'], 7, 'conv2_2')
-    graph['avgpool2'] = _avgpool(graph['conv2_2'])
-    graph['conv3_1']  = _conv2d_relu(graph['avgpool2'], 10, 'conv3_1')
-    graph['conv3_2']  = _conv2d_relu(graph['conv3_1'], 12, 'conv3_2')
-    graph['conv3_3']  = _conv2d_relu(graph['conv3_2'], 14, 'conv3_3')
-    graph['conv3_4']  = _conv2d_relu(graph['conv3_3'], 16, 'conv3_4')
-    graph['avgpool3'] = _avgpool(graph['conv3_4'])
-    graph['conv4_1']  = _conv2d_relu(graph['avgpool3'], 19, 'conv4_1')
-    graph['conv4_2']  = _conv2d_relu(graph['conv4_1'], 21, 'conv4_2')
-    graph['conv4_3']  = _conv2d_relu(graph['conv4_2'], 23, 'conv4_3')
-    graph['conv4_4']  = _conv2d_relu(graph['conv4_3'], 25, 'conv4_4')
-    graph['avgpool4'] = _avgpool(graph['conv4_4'])
-    graph['conv5_1']  = _conv2d_relu(graph['avgpool4'], 28, 'conv5_1')
-    graph['conv5_2']  = _conv2d_relu(graph['conv5_1'], 30, 'conv5_2')
-    graph['conv5_3']  = _conv2d_relu(graph['conv5_2'], 32, 'conv5_3')
-    graph['conv5_4']  = _conv2d_relu(graph['conv5_3'], 34, 'conv5_4')
-    graph['avgpool5'] = _avgpool(graph['conv5_4'])
+    _, h, w, d     = input_image.shape
+    graph['input']   = tf.Variable(np.zeros((1, h, w, d)), dtype = 'float32')
+    graph['conv1_1']  = conv2d_relu(graph['input'], 0, 'conv1_1')
+    graph['conv1_2']  = conv2d_relu(graph['conv1_1'], 2, 'conv1_2')
+    graph['avgpool1'] = avgpool(graph['conv1_2'])
+    graph['conv2_1']  = conv2d_relu(graph['avgpool1'], 5, 'conv2_1')
+    graph['conv2_2']  = conv2d_relu(graph['conv2_1'], 7, 'conv2_2')
+    graph['avgpool2'] = avgpool(graph['conv2_2'])
+    graph['conv3_1']  = conv2d_relu(graph['avgpool2'], 10, 'conv3_1')
+    graph['conv3_2']  = conv2d_relu(graph['conv3_1'], 12, 'conv3_2')
+    graph['conv3_3']  = conv2d_relu(graph['conv3_2'], 14, 'conv3_3')
+    graph['conv3_4']  = conv2d_relu(graph['conv3_3'], 16, 'conv3_4')
+    graph['avgpool3'] = avgpool(graph['conv3_4'])
+    graph['conv4_1']  = conv2d_relu(graph['avgpool3'], 19, 'conv4_1')
+    graph['conv4_2']  = conv2d_relu(graph['conv4_1'], 21, 'conv4_2')
+    graph['conv4_3']  = conv2d_relu(graph['conv4_2'], 23, 'conv4_3')
+    graph['conv4_4']  = conv2d_relu(graph['conv4_3'], 25, 'conv4_4')
+    graph['avgpool4'] = avgpool(graph['conv4_4'])
+    graph['conv5_1']  = conv2d_relu(graph['avgpool4'], 28, 'conv5_1')
+    graph['conv5_2']  = conv2d_relu(graph['conv5_1'], 30, 'conv5_2')
+    graph['conv5_3']  = conv2d_relu(graph['conv5_2'], 32, 'conv5_3')
+    graph['conv5_4']  = conv2d_relu(graph['conv5_3'], 34, 'conv5_4')
+    graph['avgpool5'] = avgpool(graph['conv5_4'])
     return graph
 
 
@@ -221,17 +200,9 @@ def style_loss_func(sess, model):
 
 
 
-
 ########## MAIN FUNCTION ##########
 global args
 args = parse_args()
-
-sess = tf.InteractiveSession()
-model = load_vgg_model(VGG_MODEL)
-# Load weights
-
-# Normalize weights
-
 
 #Read Images
 content_path = 'content-img/' + args.content_img
@@ -243,13 +214,16 @@ style_img = read_style_image(style_path, content_img)
 #input_image = generate_noise_image(content_img)
 input_image = content_img
 
+sess = tf.InteractiveSession()
+model = load_vgg_model(VGG_MODEL, input_image)
+
 #Display Image (this is just for testing)
 #cv2.imshow('image',style_img)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
 
 #Do the magic
-sess.run(tf.initialize_all_variables())
+#sess.run(tf.global_variables_initializer())
 # Construct content_loss using content_image.
 sess.run(model['input'].assign(content_img))
 content_loss = content_loss_func(sess, model)
@@ -269,28 +243,19 @@ total_loss = BETA * content_loss + ALPHA * style_loss
 optimizer = tf.train.AdamOptimizer(2.0)
 train_step = optimizer.minimize(total_loss)
 
-sess.run(tf.initialize_all_variables())
-sess.run(model['input'].assign(input_image))
-
-# Number of iterations to run.
-ITERATIONS = 1000  # The art.py uses 5000 iterations, and yields far more appealing results. If you can wait, use 5000.
-
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 sess.run(model['input'].assign(input_image))
 for it in range(ITERATIONS):
     sess.run(train_step)
     if it%10 == 0:
-        # Print every 100 iteration.
+        # Print every 10 iteration.
         mixed_image = sess.run(model['input'])
         print('Iteration %d' % (it))
         print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
         print('cost: ', sess.run(total_loss))
-
+		#Save result
         if not os.path.exists('result/'):
             os.mkdir('result/')
 
         filename = 'result/%d.png' % (it)
         save_image(filename, mixed_image)
-        #save_image(mixed_image)
-#Save result
-#save_image(style_img)
