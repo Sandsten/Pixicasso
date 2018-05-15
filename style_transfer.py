@@ -6,8 +6,6 @@ import scipy.misc
 import argparse
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from skimage.transform import resize
 
 ########## CONSTANTS ########## 
 MAX_SIZE = 300
