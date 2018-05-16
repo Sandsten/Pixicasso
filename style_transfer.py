@@ -144,12 +144,13 @@ def content_loss_func(sess, model):
     # Get the tensor for our generated image at the same layer
     x = model['conv4_2']
 
+    # Using p here since it's a vector already, could probably get the same values from the tensor x too.
     # N is the number of filters (at layer l).
     N = p.shape[3]
     # M is the height times the width of the feature map (at layer l).
     M = p.shape[1] * p.shape[2]
 
-    # Loss function from paper
+    # Loss function from paper, equation (1)
     # content_loss = 0.5 * tf.reduce_sum(tf.pow(x - p, 2))
 
     # This normalization constant is supposed to be faster and more commonly
@@ -178,17 +179,22 @@ def style_loss_func(sess, model):
     """
     Style loss function as defined in the paper.
     """
+
     def _gram_matrix(F, N, M):
         """
         The gram matrix G.
         """
+        # The gram matrix, equation (3) in the paper
         Ft = tf.reshape(F, (M, N))
         return tf.matmul(tf.transpose(Ft), Ft)
 
-    def _style_loss(a, x):
-        """
-        The style loss calculation.
-        """
+    E = []  # E holds all the E_l from the paper, equation (4)
+    for layer_name, _ in STYLE_LAYERS:
+        # Get the values from said style layer of our content image
+        a = sess.run(model[layer_name])
+        # Get the tensor for our generated image at the same layer
+        x = model[layer_name]
+
         # N is the number of filters (at layer l).
         N = a.shape[3]
         # M is the height times the width of the feature map (at layer l).
@@ -197,15 +203,26 @@ def style_loss_func(sess, model):
         A = _gram_matrix(a, N, M)
         # G is the style representation of the generated image (at layer l).
         G = _gram_matrix(x, N, M)
+
+        # Equation (4)
         result = (1 / (4 * N**2 * M**2)) * tf.reduce_sum(tf.pow(G - A, 2))
-        return result
+        E.append(result)
 
-    E = [_style_loss(sess.run(model[layer_name]), model[layer_name])
-         for layer_name, _ in STYLE_LAYERS]
+    # Array with all the weights for each layer (how much each layer should contribute)
     W = [w for _, w in STYLE_LAYERS]
-    loss = sum([W[l] * E[l] for l in range(len(STYLE_LAYERS))])
-    return loss
 
+    # Array with all the different losses from equation (5), not summed yet
+    losses = []
+    for l in range(len(STYLE_LAYERS)):
+        losses.append(W[l] * E[l])
+
+    # Sum all the losses from equation (5)
+    # It doesn't seem to make a difference wether we use sum or tf.reduce_sum
+    # They used sum and I tested with tf.reduce_sum
+    style_loss = sum(losses)
+    # style_loss = tf.reduce_sum(losses)
+
+    return style_loss
 
 
 ########## MAIN FUNCTION ##########
