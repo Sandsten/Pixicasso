@@ -250,6 +250,9 @@ model = load_vgg_model(VGG_MODEL, input_image)
 # Do the magic
 # sess.run(tf.global_variables_initializer())
 # Construct content_loss using content_image.
+# model['input'].assign(content_img) followed by sess.run(model['input'].initializer)
+# Seems to be equivalent to sess.run(model['input'].assign(content_img))
+# So I'm guessing this line is just for initializing the tf.Variable in model['input]
 sess.run(model['input'].assign(content_img))
 content_loss = content_loss_func(sess, model)
 # Construct style_loss using style_image.
