@@ -7,69 +7,72 @@ import argparse
 import numpy as np
 import tensorflow as tf
 
-########## CONSTANTS ########## 
+########## CONSTANTS ##########
 MAX_SIZE = 300
-ALPHA = 100 # Weight on style loss.
-BETA = 5 # Weight on content loss.
-ITERATIONS = 500 # Number of iterations to run.
+ALPHA = 100  # Weight on style loss.
+BETA = 5  # Weight on content loss.
+ITERATIONS = 5000  # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
 VGG_MODEL = 'imagenet-vgg-verydeep-19.mat'
 
 # Mean of the training data used for the VGG. We need to normalize our input images with that values
-MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1,1,1,3))
+MEAN_VALUES = np.array([123.68, 116.779, 103.939]).reshape((1, 1, 1, 3))
 
 
 def parse_args():
-	parser = argparse.ArgumentParser(description='Style transfer.')
-	parser.add_argument('--style_img', type=str, 
-		help='Filenames of the style image (example: starry-night.jpg)', 
-    	default='starry-night.jpg')
-	parser.add_argument('--content_img', type=str, default='lion.jpg',
-    	help='Filename of the content image (example: lion.jpg)')
-	args = parser.parse_args()
-	return args
+    parser = argparse.ArgumentParser(description='Style transfer.')
+    parser.add_argument('--style_img', type=str,
+                        help='Filenames of the style image (example: starry-night.jpg)',
+                        default='starry-night.jpg')
+    parser.add_argument('--content_img', type=str, default='lion.jpg',
+                        help='Filename of the content image (example: lion.jpg)')
+    args = parser.parse_args()
+    return args
 
-#def checkImage(img, path):
+# def checkImage(img, path):
 #	if img is None: sys.exit("Error: Invalid path {}\nExiting the program.\n".format(path))
 
+
 def read_content_image(path):
-	img = scipy.misc.imread(path)
+    img = scipy.misc.imread(path)
 
-	h, w, d = img.shape
-	mx = MAX_SIZE
-    # resize if > max size
-	if h > w and h > mx:
-		w = (float(mx) / float(h)) * w
-		img = cv2.resize(img, dsize=(int(w), mx), interpolation=cv2.INTER_AREA)
-	if w > mx:
-		h = (float(mx) / float(w)) * h
-		img = cv2.resize(img, dsize=(mx, int(h)), interpolation=cv2.INTER_AREA)
+    h, w, d = img.shape
+    mx = MAX_SIZE
+# resize if > max size
+    if h > w and h > mx:
+        w = (float(mx) / float(h)) * w
+        img = cv2.resize(img, dsize=(int(w), mx), interpolation=cv2.INTER_AREA)
+    if w > mx:
+        h = (float(mx) / float(w)) * h
+        img = cv2.resize(img, dsize=(mx, int(h)), interpolation=cv2.INTER_AREA)
 
-	# Adding an extra dimension for convnet input 
-	img = np.reshape(img, ((1,) + img.shape))
-	# Input to the VGG model expects the mean to be subtracted.
-	img = img - MEAN_VALUES
-	return img
+    # Adding an extra dimension for convnet input
+    img = np.reshape(img, ((1,) + img.shape))
+    # Input to the VGG model expects the mean to be subtracted.
+    img = img - MEAN_VALUES
+    return img
+
 
 def read_style_image(path, content_img):
-	img = scipy.misc.imread(path)
+    img = scipy.misc.imread(path)
 
-	# Resize to have the same dimension as the content image
-	_, h, w, _ = content_img.shape
-	img = cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_AREA)
-	# Adding an extra dimension for convnet input 
-	img = np.reshape(img, ((1,) + img.shape))
-	# Input to the VGG model expects the mean to be subtracted.
-	img = img - MEAN_VALUES
-	return img
+    # Resize to have the same dimension as the content image
+    _, h, w, _ = content_img.shape
+    img = cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_AREA)
+    # Adding an extra dimension for convnet input
+    img = np.reshape(img, ((1,) + img.shape))
+    # Input to the VGG model expects the mean to be subtracted.
+    img = img - MEAN_VALUES
+    return img
+
 
 def save_image(filename, img):
-	img = img + MEAN_VALUES
-	img = img[0] # Remove the extra dimension that we added at the beginning
-	img = np.clip(img, 0, 255).astype('uint8')
-	scipy.misc.imsave(filename, img)
+    img = img + MEAN_VALUES
+    img = img[0]  # Remove the extra dimension that we added at the beginning
+    img = np.clip(img, 0, 255).astype('uint8')
+    scipy.misc.imsave(filename, img)
 
 
 def load_vgg_model(path, input_image):
@@ -83,7 +86,7 @@ def load_vgg_model(path, input_image):
         W = vgg_layers[0][layer][0][0][2][0][0]
         b = vgg_layers[0][layer][0][0][2][0][1]
         layer_name = vgg_layers[0][layer][0][0][0][0]
-       
+
         assert layer_name == expected_layer_name
         return W, b
 
@@ -98,7 +101,6 @@ def load_vgg_model(path, input_image):
         return tf.nn.relu(tf.nn.conv2d(
             prev_layer, filter=W, strides=[1, 1, 1, 1], padding='SAME') + b)
 
-
     def avgpool(prev_layer):
         """
         Return the AveragePooling layer.
@@ -107,28 +109,28 @@ def load_vgg_model(path, input_image):
 
     # Constructs the graph model.
     graph = {}
-    _, h, w, d     = input_image.shape
-    graph['input']   = tf.Variable(np.zeros((1, h, w, d)), dtype = 'float32')
-    graph['conv1_1']  = conv2d_relu(graph['input'], 0, 'conv1_1')
-    graph['conv1_2']  = conv2d_relu(graph['conv1_1'], 2, 'conv1_2')
+    _, h, w, d = input_image.shape
+    graph['input'] = tf.Variable(np.zeros((1, h, w, d)), dtype='float32')
+    graph['conv1_1'] = conv2d_relu(graph['input'], 0, 'conv1_1')
+    graph['conv1_2'] = conv2d_relu(graph['conv1_1'], 2, 'conv1_2')
     graph['avgpool1'] = avgpool(graph['conv1_2'])
-    graph['conv2_1']  = conv2d_relu(graph['avgpool1'], 5, 'conv2_1')
-    graph['conv2_2']  = conv2d_relu(graph['conv2_1'], 7, 'conv2_2')
+    graph['conv2_1'] = conv2d_relu(graph['avgpool1'], 5, 'conv2_1')
+    graph['conv2_2'] = conv2d_relu(graph['conv2_1'], 7, 'conv2_2')
     graph['avgpool2'] = avgpool(graph['conv2_2'])
-    graph['conv3_1']  = conv2d_relu(graph['avgpool2'], 10, 'conv3_1')
-    graph['conv3_2']  = conv2d_relu(graph['conv3_1'], 12, 'conv3_2')
-    graph['conv3_3']  = conv2d_relu(graph['conv3_2'], 14, 'conv3_3')
-    graph['conv3_4']  = conv2d_relu(graph['conv3_3'], 16, 'conv3_4')
+    graph['conv3_1'] = conv2d_relu(graph['avgpool2'], 10, 'conv3_1')
+    graph['conv3_2'] = conv2d_relu(graph['conv3_1'], 12, 'conv3_2')
+    graph['conv3_3'] = conv2d_relu(graph['conv3_2'], 14, 'conv3_3')
+    graph['conv3_4'] = conv2d_relu(graph['conv3_3'], 16, 'conv3_4')
     graph['avgpool3'] = avgpool(graph['conv3_4'])
-    graph['conv4_1']  = conv2d_relu(graph['avgpool3'], 19, 'conv4_1')
-    graph['conv4_2']  = conv2d_relu(graph['conv4_1'], 21, 'conv4_2')
-    graph['conv4_3']  = conv2d_relu(graph['conv4_2'], 23, 'conv4_3')
-    graph['conv4_4']  = conv2d_relu(graph['conv4_3'], 25, 'conv4_4')
+    graph['conv4_1'] = conv2d_relu(graph['avgpool3'], 19, 'conv4_1')
+    graph['conv4_2'] = conv2d_relu(graph['conv4_1'], 21, 'conv4_2')
+    graph['conv4_3'] = conv2d_relu(graph['conv4_2'], 23, 'conv4_3')
+    graph['conv4_4'] = conv2d_relu(graph['conv4_3'], 25, 'conv4_4')
     graph['avgpool4'] = avgpool(graph['conv4_4'])
-    graph['conv5_1']  = conv2d_relu(graph['avgpool4'], 28, 'conv5_1')
-    graph['conv5_2']  = conv2d_relu(graph['conv5_1'], 30, 'conv5_2')
-    graph['conv5_3']  = conv2d_relu(graph['conv5_2'], 32, 'conv5_3')
-    graph['conv5_4']  = conv2d_relu(graph['conv5_3'], 34, 'conv5_4')
+    graph['conv5_1'] = conv2d_relu(graph['avgpool4'], 28, 'conv5_1')
+    graph['conv5_2'] = conv2d_relu(graph['conv5_1'], 30, 'conv5_2')
+    graph['conv5_3'] = conv2d_relu(graph['conv5_2'], 32, 'conv5_3')
+    graph['conv5_4'] = conv2d_relu(graph['conv5_3'], 34, 'conv5_4')
     graph['avgpool5'] = avgpool(graph['conv5_4'])
     return graph
 
@@ -137,20 +139,26 @@ def content_loss_func(sess, model):
     """
     Content loss function as defined in the paper.
     """
-    def _content_loss(p, x):
-        # N is the number of filters (at layer l).
-        N = p.shape[3]
-        # M is the height times the width of the feature map (at layer l).
-        M = p.shape[1] * p.shape[2]
-        # Interestingly, the paper uses this form instead:
-        #
-        #   0.5 * tf.reduce_sum(tf.pow(x - p, 2)) 
-        #
-        # But this form is very slow in "painting" and thus could be missing
-        # out some constants (from what I see in other source code), so I'll
-        # replicate the same normalization constant as used in style loss.
-        return (1 / (4 * N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
-    return _content_loss(sess.run(model['conv4_2']), model['conv4_2'])
+    # Get the values from said layer of our content image
+    p = sess.run(model['conv4_2'])
+    # Get the tensor for our generated image at the same layer
+    x = model['conv4_2']
+
+    # N is the number of filters (at layer l).
+    N = p.shape[3]
+    # M is the height times the width of the feature map (at layer l).
+    M = p.shape[1] * p.shape[2]
+
+    # Loss function from paper
+    # content_loss = 0.5 * tf.reduce_sum(tf.pow(x - p, 2))
+
+    # This normalization constant is supposed to be faster and more commonly
+    # used in style loss
+    content_loss = (1 / (4 * N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
+
+    # Return the tensor for content loss
+    return content_loss
+
 
 # Layers to use. We will use these layers as advised in the paper.
 # To have softer features, increase the weight of the higher layers
@@ -164,6 +172,7 @@ STYLE_LAYERS = [
     ('conv4_1', 3.0),
     ('conv5_1', 4.0),
 ]
+
 
 def style_loss_func(sess, model):
     """
@@ -191,7 +200,8 @@ def style_loss_func(sess, model):
         result = (1 / (4 * N**2 * M**2)) * tf.reduce_sum(tf.pow(G - A, 2))
         return result
 
-    E = [_style_loss(sess.run(model[layer_name]), model[layer_name]) for layer_name, _ in STYLE_LAYERS]
+    E = [_style_loss(sess.run(model[layer_name]), model[layer_name])
+         for layer_name, _ in STYLE_LAYERS]
     W = [w for _, w in STYLE_LAYERS]
     loss = sum([W[l] * E[l] for l in range(len(STYLE_LAYERS))])
     return loss
@@ -202,7 +212,7 @@ def style_loss_func(sess, model):
 global args
 args = parse_args()
 
-#Read Images
+# Read Images
 content_path = 'content-img/' + args.content_img
 content_img = read_content_image(content_path)
 
@@ -215,13 +225,13 @@ input_image = content_img
 sess = tf.InteractiveSession()
 model = load_vgg_model(VGG_MODEL, input_image)
 
-#Display Image (this is just for testing)
-#cv2.imshow('image',style_img)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
+# Display Image (this is just for testing)
+# cv2.imshow('image',style_img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
 
-#Do the magic
-#sess.run(tf.global_variables_initializer())
+# Do the magic
+# sess.run(tf.global_variables_initializer())
 # Construct content_loss using content_image.
 sess.run(model['input'].assign(content_img))
 content_loss = content_loss_func(sess, model)
@@ -245,13 +255,13 @@ sess.run(tf.global_variables_initializer())
 sess.run(model['input'].assign(input_image))
 for it in range(ITERATIONS):
     sess.run(train_step)
-    if it%10 == 0:
+    if it % 100 == 0:
         # Print every 10 iteration.
         mixed_image = sess.run(model['input'])
         print('Iteration %d' % (it))
         print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
         print('cost: ', sess.run(total_loss))
-		#Save result
+        # Save result
         if not os.path.exists('result/'):
             os.mkdir('result/')
 
