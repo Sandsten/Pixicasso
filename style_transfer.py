@@ -324,12 +324,16 @@ def compareStyles(c_path, styles_path):
         style_img = read_style_image(style_path, content_img)
         new_image, data_list = style_transfer(
             content_img, style_img, 1000)
-        filename = 'result/' + c_path + "-" + s_path + '.png'
+        filename = 'results_1_faster_decay/' + c_path + "-" + s_path + '.png'
         save_image(filename, new_image)
-        np.savez("data_list", data_list)
+        np.savez("results_1_faster_decay/data_list_" + s_path, data_list)
 
 
 # compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
 #                            "seated-nude", "starry-night", "woman-with-hat-matisse"])
 compareStyles("lion", ["kandinsky"])
-# compareStyles("lion", ["kandinsky"])
+# compareStyles("lion", ["shipwreck"])
+# compareStyles("lion", ["the_scream"])
+# compareStyles("lion", ["seated-nude"])
+# compareStyles("lion", ["starry-night"])
+# compareStyles("lion", ["woman-with-hat-matisse"])
