@@ -307,18 +307,25 @@ def style_transfer(content_img, style_img, iterations):
         #         os.mkdir('result/')
         #     filename = 'result/%d.png' % (it)
         #     save_image(filename, mixed_image)
-    return total_loss_list,content_loss_list,style_loss_list,cross_loss_list
+    data_list = {"total_loss":total_loss_list,"content_loss": content_loss_list, 
+        "style_loss":style_loss_list, "cross_loss":cross_loss_list}
+    return sess.run(model['input']), data_list
 
 def compareStyles(c_path,styles_path):
     total_losses = []
-    content_path = 'content-img/' + c_path
+    content_path = 'content-img/' + c_path + ".jpg"
     content_img = read_content_image(content_path)
     for s_path in styles_path:
-        style_path = 'style-img/' + s_path
+        style_path = 'style-img/' + s_path + ".jpg"
         style_img = read_style_image(style_path, content_img)  
-        total_loss_list,content_loss_list,style_loss_list,cross_loss_list = style_transfer(content_img, style_img, 2)
-        total_losses.append(total_loss_list[-1])
+        new_image, data_list = style_transfer(
+            content_img, style_img, 1000)
+        filename = 'result/' + c_path + "-" + s_path + '.png'
+        save_image(filename, new_image)
+        np.savez("data_list",data_list)
     print(total_losses)
 
 
-compareStyles("lion.jpg", ["starry-night.jpg", "shipwreck.jpg"])
+# compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
+                        #    "seated-nude", "starry-night", "woman-with-hat-matisse"])
+compareStyles("lion", ["kandinsky"])
