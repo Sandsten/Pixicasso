@@ -296,7 +296,8 @@ def style_transfer(content_img, style_img, iterations):
         content_loss_list.append(sess.run(content_loss))
         style_loss_list.append(sess.run(style_loss))
         cross_loss_list.append(sess.run(cross_loss))
-        # if it % 100 == 0:
+        if it % 100 == 0:
+            print(it)
         #     # Print every 10 iteration.
         #     mixed_image = sess.run(model['input'])
         #     print('Iteration %d' % (it))
@@ -316,6 +317,7 @@ def compareStyles(c_path,styles_path):
     content_path = 'content-img/' + c_path + ".jpg"
     content_img = read_content_image(content_path)
     for s_path in styles_path:
+        print(s_path)
         style_path = 'style-img/' + s_path + ".jpg"
         style_img = read_style_image(style_path, content_img)  
         new_image, data_list = style_transfer(
@@ -323,9 +325,7 @@ def compareStyles(c_path,styles_path):
         filename = 'result/' + c_path + "-" + s_path + '.png'
         save_image(filename, new_image)
         np.savez("data_list",data_list)
-    print(total_losses)
 
-
-# compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
-                        #    "seated-nude", "starry-night", "woman-with-hat-matisse"])
-compareStyles("lion", ["kandinsky"])
+compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
+                           "seated-nude", "starry-night", "woman-with-hat-matisse"])
+# compareStyles("lion", ["kandinsky"])
