@@ -263,7 +263,7 @@ total_loss = BETA * content_loss + ALPHA * style_loss
 
 # From the paper: jointly minimize the distance of a white noise image
 # from the content representation of the photograph in one layer of
-# the neywork and the style representation of the painting in a number
+# the network and the style representation of the painting in a number
 # of layers of the CNN.
 #
 # The content is built from one layer, while the style is from five
@@ -271,9 +271,18 @@ total_loss = BETA * content_loss + ALPHA * style_loss
 optimizer = tf.train.AdamOptimizer(2.0)
 train_step = optimizer.minimize(total_loss)
 
-sess.run(tf.global_variables_initializer())
+# The AdamOptimizer adds new variables that has to be initialized
+# Create the opreations for initializing variables
+init_vars = tf.global_variables_initializer()
+# Apply operations to model which applies the variables
+sess.run(init_vars)
+
+# Do not initialize variable after this line, if we do that
+# the input will be overwritten by the zeros defined when loading the model.
 sess.run(model['input'].assign(input_image))
+
 for it in range(ITERATIONS):
+    # Perform one epoch of training
     sess.run(train_step)
     if it % 100 == 0:
         # Print every 10 iteration.

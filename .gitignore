@@ -110,9 +110,6 @@ ENV/
 # the network
 *.mat
 
-# test file
-test.py
-
 # graph
 /graph
 
