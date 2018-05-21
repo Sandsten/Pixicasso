@@ -11,7 +11,7 @@ import tensorflow as tf
 MAX_SIZE = 300
 ALPHA = 100  # Weight on style loss.
 BETA = 5  # Weight on content loss.
-ITERATIONS = 5000  # Number of iterations to run.
+# ITERATIONS = 2  # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -236,63 +236,89 @@ content_img = read_content_image(content_path)
 style_path = 'style-img/' + args.style_img
 style_img = read_style_image(style_path, content_img)
 
-#input_image = generate_noise_image(content_img)
-input_image = content_img
+def style_transfer(content_img, style_img, iterations):
+    #input_image = generate_noise_image(content_img)
+    input_image = content_img
 
-sess = tf.InteractiveSession()
-model = load_vgg_model(VGG_MODEL, input_image)
+    sess = tf.InteractiveSession()
+    model = load_vgg_model(VGG_MODEL, input_image)
 
-# Display Image (this is just for testing)
-# cv2.imshow('image',style_img)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+    # Display Image (this is just for testing)
+    # cv2.imshow('image',style_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-# Do the magic
-# sess.run(tf.global_variables_initializer())
-# Construct content_loss using content_image.
-# model['input'].assign(content_img) followed by sess.run(model['input'].initializer)
-# Seems to be equivalent to sess.run(model['input'].assign(content_img))
-# So I'm guessing this line is just for initializing the tf.Variable in model['input]
-sess.run(model['input'].assign(content_img))
-content_loss = content_loss_func(sess, model)
-# Construct style_loss using style_image.
-sess.run(model['input'].assign(style_img))
-style_loss = style_loss_func(sess, model)
-# Instantiate equation 7 of the paper.
-total_loss = BETA * content_loss + ALPHA * style_loss
+    # Do the magic
+    # sess.run(tf.global_variables_initializer())
+    # Construct content_loss using content_image.
+    # model['input'].assign(content_img) followed by sess.run(model['input'].initializer)
+    # Seems to be equivalent to sess.run(model['input'].assign(content_img))
+    # So I'm guessing this line is just for initializing the tf.Variable in model['input]
+    sess.run(model['input'].assign(content_img))
+    cross_loss = style_loss_func(sess, model)
 
-# From the paper: jointly minimize the distance of a white noise image
-# from the content representation of the photograph in one layer of
-# the network and the style representation of the painting in a number
-# of layers of the CNN.
-#
-# The content is built from one layer, while the style is from five
-# layers. Then we minimize the total_loss, which is the equation 7.
-optimizer = tf.train.AdamOptimizer(2.0)
-train_step = optimizer.minimize(total_loss)
+    sess.run(model['input'].assign(content_img))
+    content_loss = content_loss_func(sess, model)
+    # Construct style_loss using style_image.
+    sess.run(model['input'].assign(style_img))
+    style_loss = style_loss_func(sess, model)
+    # Instantiate equation 7 of the paper.
+    total_loss = BETA * content_loss + ALPHA * style_loss
 
-# The AdamOptimizer adds new variables that has to be initialized
-# Create the opreations for initializing variables
-init_vars = tf.global_variables_initializer()
-# Apply operations to model which applies the variables
-sess.run(init_vars)
+    # From the paper: jointly minimize the distance of a white noise image
+    # from the content representation of the photograph in one layer of
+    # the network and the style representation of the painting in a number
+    # of layers of the CNN.
+    #
+    # The content is built from one layer, while the style is from five
+    # layers. Then we minimize the total_loss, which is the equation 7.
+    optimizer = tf.train.AdamOptimizer(2.0)
+    train_step = optimizer.minimize(total_loss)
 
-# Do not initialize variable after this line, if we do that
-# the input will be overwritten by the zeros defined when loading the model.
-sess.run(model['input'].assign(input_image))
+    # The AdamOptimizer adds new variables that has to be initialized
+    # Create the opreations for initializing variables
+    init_vars = tf.global_variables_initializer()
+    # Apply operations to model which applies the variables
+    sess.run(init_vars)
 
-for it in range(ITERATIONS):
-    # Perform one epoch of training
-    sess.run(train_step)
-    if it % 100 == 0:
-        # Print every 10 iteration.
-        mixed_image = sess.run(model['input'])
-        print('Iteration %d' % (it))
-        print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
-        print('cost: ', sess.run(total_loss))
-        # Save result
-        if not os.path.exists('result/'):
-            os.mkdir('result/')
+    # Do not initialize variable after this line, if we do that
+    # the input will be overwritten by the zeros defined when loading the model.
+    sess.run(model['input'].assign(input_image))
+    total_loss_list = []
+    content_loss_list = []
+    style_loss_list = []
+    cross_loss_list = []
+    for it in range(iterations):
+        # Perform one epoch of training
+        sess.run(train_step)
+        # mixed_image = sess.run(model['input'])
+        total_loss_list.append(sess.run(total_loss))
+        content_loss_list.append(sess.run(content_loss))
+        style_loss_list.append(sess.run(style_loss))
+        cross_loss_list.append(sess.run(cross_loss))
+        # if it % 100 == 0:
+        #     # Print every 10 iteration.
+        #     mixed_image = sess.run(model['input'])
+        #     print('Iteration %d' % (it))
+        #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
+        #     print('cost: ', sess.run(total_loss))
+        #     # Save result
+        #     if not os.path.exists('result/'):
+        #         os.mkdir('result/')
+        #     filename = 'result/%d.png' % (it)
+        #     save_image(filename, mixed_image)
+    return total_loss_list,content_loss_list,style_loss_list,cross_loss_list
 
-        filename = 'result/%d.png' % (it)
-        save_image(filename, mixed_image)
+def compareStyles(c_path,styles_path):
+    total_losses = []
+    content_path = 'content-img/' + c_path
+    content_img = read_content_image(content_path)
+    for s_path in styles_path:
+        style_path = 'style-img/' + s_path
+        style_img = read_style_image(style_path, content_img)  
+        total_loss_list,content_loss_list,style_loss_list,cross_loss_list = style_transfer(content_img, style_img, 2)
+        total_losses.append(total_loss_list[-1])
+    print(total_losses)
+
+
+compareStyles("lion.jpg", ["starry-night.jpg", "shipwreck.jpg"])
