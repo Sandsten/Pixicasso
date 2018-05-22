@@ -11,7 +11,7 @@ import tensorflow as tf
 MAX_SIZE = 300
 ALPHA = 100  # Weight on style loss.
 BETA = 5  # Weight on content loss.
-# ITERATIONS = 2  # Number of iterations to run.
+ITERATIONS = 5001  # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -300,16 +300,18 @@ def style_transfer(content_img, style_img, iterations):
         cross_loss_list.append(sess.run(cross_loss))
         if it % 100 == 0:
             print(it)
-        #     # Print every 10 iteration.
-        #     mixed_image = sess.run(model['input'])
-        #     print('Iteration %d' % (it))
-        #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
-        #     print('cost: ', sess.run(total_loss))
-        #     # Save result
-        #     if not os.path.exists('result/'):
-        #         os.mkdir('result/')
-        #     filename = 'result/%d.png' % (it)
-        #     save_image(filename, mixed_image)
+        # if it % 500 == 0:
+            #     print("Save!")
+            # #     # Print every 10 iteration.
+            #     mixed_image = sess.run(model['input'])
+            # #     print('Iteration %d' % (it))
+            # #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
+            # #     print('cost: ', sess.run(total_loss))
+            # #     # Save result
+            #     if not os.path.exists('result_5000/'):
+            #         os.mkdir('result_5000/')
+            #     filename = 'result/%d.png' % (it)
+            #     save_image(filename, mixed_image)
     data_list = {"total_loss": total_loss_list, "content_loss": content_loss_list,
                  "style_loss": style_loss_list, "cross_loss": cross_loss_list}
     return sess.run(model['input']), data_list
@@ -324,17 +326,17 @@ def compareStyles(c_path, styles_path):
         style_path = 'style-img/' + s_path + ".jpg"
         style_img = read_style_image(style_path, content_img)
         new_image, data_list = style_transfer(
-            content_img, style_img, 1000)
-        filename = 'results_1_faster_decay/' + c_path + "-" + s_path + '.png'
-        save_image(filename, new_image)
-        np.savez("results_1_faster_decay/data_list_" + s_path, data_list)
+            content_img, style_img, ITERATIONS)
+        # filename = 'results_5000/' + c_path + "-" + s_path + '.png'
+        # save_image(filename, new_image)
+        np.savez("results_5000_iter/data_list_" + s_path, data_list)
 
 
 # compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
 #                            "seated-nude", "starry-night", "woman-with-hat-matisse"])
-compareStyles("lion", ["kandinsky"])
+# compareStyles("lion", ["kandinsky"])
 # compareStyles("lion", ["shipwreck"])
 # compareStyles("lion", ["the_scream"])
 # compareStyles("lion", ["seated-nude"])
-# compareStyles("lion", ["starry-night"])
+compareStyles("lion", ["starry-night"])
 # compareStyles("lion", ["woman-with-hat-matisse"])
