@@ -1,0 +1,1 @@
+# total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
