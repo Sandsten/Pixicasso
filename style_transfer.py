@@ -32,9 +32,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-# def checkImage(img, path):
-#	if img is None: sys.exit("Error: Invalid path {}\nExiting the program.\n".format(path))
-
 
 def read_content_image(path):
     img = scipy.misc.imread(path)
@@ -137,9 +134,7 @@ def load_vgg_model(path, input_image):
 
 
 def content_loss_func(sess, model):
-    """
-    Content loss function as defined in the paper.
-    """
+
     # Get the values from said layer of our content image
     p = sess.run(model['conv4_2'])
     # Get the tensor for our generated image at the same layer
@@ -177,14 +172,8 @@ STYLE_LAYERS = [
 
 
 def style_loss_func(sess, model):
-    """
-    Style loss function as defined in the paper.
-    """
 
-    def _gram_matrix(F, N, M):
-        """
-        The gram matrix G.
-        """
+    def gram_matrix(F, N, M):
         # The gram matrix, equation (3) in the paper
         Ft = tf.reshape(F, (M, N))
         return tf.matmul(tf.transpose(Ft), Ft)
@@ -201,9 +190,9 @@ def style_loss_func(sess, model):
         # M is the height times the width of the feature map (at layer l).
         M = a.shape[1] * a.shape[2]
         # A is the style representation of the original image (at layer l).
-        A = _gram_matrix(a, N, M)
+        A = gram_matrix(a, N, M)
         # G is the style representation of the generated image (at layer l).
-        G = _gram_matrix(x, N, M)
+        G = gram_matrix(x, N, M)
 
         # Equation (4)
         result = (1 / (4 * N**2 * M**2)) * tf.reduce_sum(tf.pow(G - A, 2))
@@ -264,18 +253,17 @@ def style_transfer(content_img, style_img, iterations):
     # Construct style_loss using style_image.
     sess.run(model['input'].assign(style_img))
     style_loss = style_loss_func(sess, model)
+
     # Instantiate equation 7 of the paper.
     # total_loss = BETA * content_loss + ALPHA * style_loss
+
+    # Our own variations of the total_loss function
     # total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - ALPHA * cross_loss
     total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
     # total_loss = ALPHA * style_loss - BETA * cross_loss
 
-    # From the paper: jointly minimize the distance of a white noise image
-    # from the content representation of the photograph in one layer of
-    # the network and the style representation of the painting in a number
-    # of layers of the CNN.
-    #
+    # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
     # layers. Then we minimize the total_loss, which is the equation 7.
     optimizer = tf.train.AdamOptimizer(2.0)
