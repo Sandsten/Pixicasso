@@ -12,7 +12,7 @@ MAX_SIZE = 300
 ALPHA = 100  # Weight on style loss.
 BETA = 5  # Weight on content loss.
 GAMMA = 90  # Cross loss weight
-ITERATIONS = 500  # Number of iterations to run.
+ITERATIONS = 100  # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -265,10 +265,10 @@ def style_transfer(content_img, style_img, iterations):
     sess.run(model['input'].assign(style_img))
     style_loss = style_loss_func(sess, model)
     # Instantiate equation 7 of the paper.
-    total_loss = BETA * content_loss + ALPHA * style_loss
+    # total_loss = BETA * content_loss + ALPHA * style_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - ALPHA * cross_loss
-    # total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
+    total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
     # total_loss = ALPHA * style_loss - BETA * cross_loss
 
     # From the paper: jointly minimize the distance of a white noise image
@@ -302,7 +302,7 @@ def style_transfer(content_img, style_img, iterations):
         content_loss_list.append(sess.run(content_loss))
         style_loss_list.append(sess.run(style_loss))
         cross_loss_list.append(sess.run(cross_loss))
-        if it % 100 == 0:
+        if it % 10 == 0:
             print(it)
             print("Save!")
         #     # Print every 10 iteration.
@@ -343,8 +343,8 @@ def compareStyles(c_path, styles_path):
 
 # compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
 #                            "seated-nude", "starry-night", "woman-with-hat-matisse"])
-# compareStyles("lion", ["kandinsky"])
-compareStyles("lion", ["shipwreck"])
+compareStyles("lion", ["kandinsky"])
+# compareStyles("lion", ["shipwreck"])
 # compareStyles("lion", ["the_scream"])
 # compareStyles("lion", ["seated-nude"])
 # compareStyles("lion", ["starry-night"])
