@@ -268,7 +268,7 @@ def style_transfer(content_img, style_img, iterations):
     total_loss = BETA * content_loss + ALPHA * style_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - ALPHA * cross_loss
-    total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
+    # total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
     # total_loss = ALPHA * style_loss - BETA * cross_loss
 
     # From the paper: jointly minimize the distance of a white noise image
@@ -311,7 +311,9 @@ def style_transfer(content_img, style_img, iterations):
         #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
         #     print('cost: ', sess.run(total_loss))
         #     # Save result
-            the_path = "result_GAMMA_90_cross_loss_the_scream"
+
+            # SET path
+            the_path = "result/"
             if not os.path.exists(the_path):
                 os.mkdir(the_path)
             filename = the_path + '/%d.png' % (it)
@@ -332,7 +334,8 @@ def compareStyles(c_path, styles_path):
         new_image, data_list = style_transfer(
             content_img, style_img, ITERATIONS)
 
-        the_path = "result_GAMMA_90_cross_loss_the_scream/"
+        # SET path
+        the_path = "result/"
         filename = the_path + c_path + "-" + s_path + '.png'
         save_image(filename, new_image)
         np.savez(the_path + "/data_list_" + s_path, data_list)
@@ -341,8 +344,8 @@ def compareStyles(c_path, styles_path):
 # compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
 #                            "seated-nude", "starry-night", "woman-with-hat-matisse"])
 # compareStyles("lion", ["kandinsky"])
-# compareStyles("lion", ["shipwreck"])
-compareStyles("lion", ["the_scream"])
+compareStyles("lion", ["shipwreck"])
+# compareStyles("lion", ["the_scream"])
 # compareStyles("lion", ["seated-nude"])
 # compareStyles("lion", ["starry-night"])
 # compareStyles("lion", ["woman-with-hat-matisse"])
