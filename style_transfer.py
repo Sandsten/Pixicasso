@@ -265,6 +265,7 @@ def style_transfer(content_img, style_img, iterations):
     style_loss = style_loss_func(sess, model)
     # Instantiate equation 7 of the paper.
     total_loss = BETA * content_loss + ALPHA * style_loss
+    # total_loss = BETA * content_loss + ALPHA * (style_loss - cross_loss)
 
     # From the paper: jointly minimize the distance of a white noise image
     # from the content representation of the photograph in one layer of
