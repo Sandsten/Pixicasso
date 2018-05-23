@@ -214,8 +214,6 @@ def style_loss_func(sess, model):
     return style_loss
 
 
-
-
 def style_transfer(c_path, s_path, iterations):
     content_path = 'content-img/' + c_path + ".jpg"
     content_img = read_content_image(content_path)
@@ -247,7 +245,6 @@ def style_transfer(c_path, s_path, iterations):
     # total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - ALPHA * cross_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
-    # total_loss = ALPHA * style_loss - BETA * cross_loss
 
     # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
