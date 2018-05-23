@@ -42,7 +42,7 @@ def read_content_image(path):
 
     h, w, d = img.shape
     mx = MAX_SIZE
-# resize if > max size
+    # resize if > max size
     if h > w and h > mx:
         w = (float(mx) / float(h)) * w
         img = cv2.resize(img, dsize=(int(w), mx), interpolation=cv2.INTER_AREA)
@@ -160,12 +160,8 @@ def content_loss_func(sess, model):
     # Return the tensor for content loss
     return content_loss
 
-
-# Layers to use. We will use these layers as advised in the paper.
-# To have softer features, increase the weight of the higher layers
-# (conv5_1) and decrease the weight of the lower layers (conv1_1).
-# To have harder features, decrease the weight of the higher layers
-# (conv5_1) and increase the weight of the lower layers (conv1_1).
+# For softer features, increase weight of higher layers
+# For sharper features, increase weight of lower layer
 STYLE_LAYERS = [
     ('conv1_1', 0.5),
     ('conv2_1', 1.0),
@@ -212,27 +208,15 @@ def style_loss_func(sess, model):
 
     # Sum all the losses from equation (5)
     # It doesn't seem to make a difference wether we use sum or tf.reduce_sum
-    # They used sum and I tested with tf.reduce_sum
     style_loss = sum(losses)
     # style_loss = tf.reduce_sum(losses)
 
     return style_loss
 
 
-########## MAIN FUNCTION ##########
-global args
-args = parse_args()
-
-# # Read Images
-# content_path = 'content-img/' + args.content_img
-# content_img = read_content_image(content_path)
-
-# style_path = 'style-img/' + args.style_img
-# style_img = read_style_image(style_path, content_img)
 
 
 def style_transfer(c_path, s_path, iterations):
-    #input_image = generate_noise_image(content_img)
     content_path = 'content-img/' + c_path + ".jpg"
     content_img = read_content_image(content_path)
 
@@ -244,22 +228,14 @@ def style_transfer(c_path, s_path, iterations):
     sess = tf.InteractiveSession()
     model = load_vgg_model(VGG_MODEL, input_image)
 
-    # Display Image (this is just for testing)
-    # cv2.imshow('image',style_img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    # Do the magic
-    # sess.run(tf.global_variables_initializer())
-    # Construct content_loss using content_image.
-    # model['input'].assign(content_img) followed by sess.run(model['input'].initializer)
-    # Seems to be equivalent to sess.run(model['input'].assign(content_img))
-    # So I'm guessing this line is just for initializing the tf.Variable in model['input]
+    # Construct the style_loss for the content image
     sess.run(model['input'].assign(content_img))
     cross_loss = style_loss_func(sess, model)
 
+    # Construct content_loss for content image
     sess.run(model['input'].assign(content_img))
     content_loss = content_loss_func(sess, model)
+    
     # Construct style_loss using style_image.
     sess.run(model['input'].assign(style_img))
     style_loss = style_loss_func(sess, model)
@@ -288,6 +264,8 @@ def style_transfer(c_path, s_path, iterations):
     # Do not initialize variable after this line, if we do that
     # the input will be overwritten by the zeros defined when loading the model.
     sess.run(model['input'].assign(input_image))
+
+    # Arrays for storing losses
     total_loss_list = []
     content_loss_list = []
     style_loss_list = []
@@ -295,7 +273,6 @@ def style_transfer(c_path, s_path, iterations):
     for it in range(iterations):
         # Perform one epoch of training
         sess.run(train_step)
-        # mixed_image = sess.run(model['input'])
         total_loss_list.append(sess.run(total_loss))
         content_loss_list.append(sess.run(content_loss))
         style_loss_list.append(sess.run(style_loss))
@@ -305,13 +282,7 @@ def style_transfer(c_path, s_path, iterations):
         if it % 500 == 0 and it != 0:
             if args.save_intermediate:
                 print("Save!")
-            #     # Print every 10 iteration.
                 mixed_image = sess.run(model['input'])
-            #     print('Iteration %d' % (it))
-            #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
-            #     print('cost: ', sess.run(total_loss))
-            #     # Save result
-                # SET path
                 the_path = args.save_path
                 filename = the_path + '/' + c_path + \
                     '-' + s_path + '_%d.png' % (it)
@@ -321,37 +292,33 @@ def style_transfer(c_path, s_path, iterations):
                  "style_loss": style_loss_list, "cross_loss": cross_loss_list}
 
     mixed_image = sess.run(model['input'])
-
     sess.close()
-
     return mixed_image, data_list
 
 
 def compareStyles(c_path, styles_path):
     total_losses = []
-    # content_path = 'content-img/' + c_path + ".jpg"
-    # content_img = read_content_image(content_path)
+
     # Create the save path if it doesn't extis
     if not os.path.exists(args.save_path):
         os.mkdir(args.save_path)
 
     for s_path in styles_path:
         print(s_path)
-        # style_path = 'style-img/' + s_path + ".jpg"
-        # style_img = read_style_image(style_path, content_img)
 
         new_image, data_list = style_transfer(
             c_path, s_path, ITERATIONS)
 
-        # new_image, data_list = style_transfer(
-        #     content_img, style_img, ITERATIONS)
-
-        # SET path
         the_path = args.save_path
         filename = the_path + '/' + c_path + "-" + s_path + '.png'
         save_image(filename, new_image)
         np.savez(the_path + "/data_list_" + s_path, data_list)
 
+
+
+########## MAIN FUNCTION ##########
+global args
+args = parse_args()
 
 compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
