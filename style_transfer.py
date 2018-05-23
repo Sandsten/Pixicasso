@@ -353,8 +353,8 @@ def compareStyles(c_path, styles_path):
         np.savez(the_path + "/data_list_" + s_path, data_list)
 
 
-compareStyles("flower", ["kandinsky", "shipwreck", "the_scream",
-                         "seated-nude", "starry-night", "woman-with-hat-matisse"])
+compareStyles("golden_gate", ["kandinsky", "shipwreck", "the_scream",
+                              "seated-nude", "starry-night", "woman-with-hat-matisse"])
 # compareStyles("coast", ["kandinsky"])
 # compareStyles("coast", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
