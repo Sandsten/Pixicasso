@@ -8,9 +8,9 @@ import numpy as np
 import tensorflow as tf
 
 ########## CONSTANTS ##########
-MAX_SIZE = 300
+MAX_SIZE = 600
 ALPHA = 100  # Weight on style loss.
-BETA = 1  # Weight on content loss.
+BETA = 5  # Weight on content loss.
 GAMMA = 90  # Cross loss weight
 ITERATIONS = 1000  # Number of iterations to run.
 
@@ -332,8 +332,8 @@ args = parse_args()
 # compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
 #                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
 
-compareStyles("tubingen", ["kandinsky"])
-# compareStyles("tubingen", ["shipwreck"])
+# compareStyles("tubingen", ["kandinsky"])
+compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
 # compareStyles("coast", ["seated-nude"])
 # compareStyles("coast", ["starry-night"])
