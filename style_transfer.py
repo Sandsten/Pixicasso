@@ -12,7 +12,7 @@ MAX_SIZE = 300
 ALPHA = 100  # Weight on style loss.
 BETA = 5  # Weight on content loss.
 GAMMA = 90  # Cross loss weight
-ITERATIONS = 100  # Number of iterations to run.
+ITERATIONS = 1000  # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -29,6 +29,10 @@ def parse_args():
                         default='starry-night.jpg')
     parser.add_argument('--content_img', type=str, default='lion.jpg',
                         help='Filename of the content image (example: lion.jpg)')
+    parser.add_argument('--save_intermediate', type=bool, default=False,
+                        help="Save intermediate images")
+    parser.add_argument('--save_path', type=str, default="result/")
+
     args = parser.parse_args()
     return args
 
@@ -219,16 +223,22 @@ def style_loss_func(sess, model):
 global args
 args = parse_args()
 
-# Read Images
-content_path = 'content-img/' + args.content_img
-content_img = read_content_image(content_path)
+# # Read Images
+# content_path = 'content-img/' + args.content_img
+# content_img = read_content_image(content_path)
 
-style_path = 'style-img/' + args.style_img
-style_img = read_style_image(style_path, content_img)
+# style_path = 'style-img/' + args.style_img
+# style_img = read_style_image(style_path, content_img)
 
 
-def style_transfer(content_img, style_img, iterations):
+def style_transfer(c_path, s_path, iterations):
     #input_image = generate_noise_image(content_img)
+    content_path = 'content-img/' + c_path + ".jpg"
+    content_img = read_content_image(content_path)
+
+    style_path = 'style-img/' + s_path + ".jpg"
+    style_img = read_style_image(style_path, content_img)
+
     input_image = content_img
 
     sess = tf.InteractiveSession()
@@ -255,12 +265,12 @@ def style_transfer(content_img, style_img, iterations):
     style_loss = style_loss_func(sess, model)
 
     # Instantiate equation 7 of the paper.
-    # total_loss = BETA * content_loss + ALPHA * style_loss
+    total_loss = BETA * content_loss + ALPHA * style_loss
 
     # Our own variations of the total_loss function
     # total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
     # total_loss = BETA * content_loss + ALPHA * style_loss - ALPHA * cross_loss
-    total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
+    # total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
     # total_loss = ALPHA * style_loss - BETA * cross_loss
 
     # Initialize an optimizer that will minimize our loss
@@ -290,50 +300,64 @@ def style_transfer(content_img, style_img, iterations):
         content_loss_list.append(sess.run(content_loss))
         style_loss_list.append(sess.run(style_loss))
         cross_loss_list.append(sess.run(cross_loss))
-        if it % 10 == 0:
+        if it % 100 == 0:
             print(it)
-            print("Save!")
-        #     # Print every 10 iteration.
-            mixed_image = sess.run(model['input'])
-        #     print('Iteration %d' % (it))
-        #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
-        #     print('cost: ', sess.run(total_loss))
-        #     # Save result
+        if it % 500 == 0 and it != 0:
+            if args.save_intermediate:
+                print("Save!")
+            #     # Print every 10 iteration.
+                mixed_image = sess.run(model['input'])
+            #     print('Iteration %d' % (it))
+            #     print('sum : ', sess.run(tf.reduce_sum(mixed_image)))
+            #     print('cost: ', sess.run(total_loss))
+            #     # Save result
+                # SET path
+                the_path = args.save_path
+                filename = the_path + '/' + c_path + \
+                    '-' + s_path + '_%d.png' % (it)
+                save_image(filename, mixed_image)
 
-            # SET path
-            the_path = "result/"
-            if not os.path.exists(the_path):
-                os.mkdir(the_path)
-            filename = the_path + '/%d.png' % (it)
-            save_image(filename, mixed_image)
     data_list = {"total_loss": total_loss_list, "content_loss": content_loss_list,
                  "style_loss": style_loss_list, "cross_loss": cross_loss_list}
-    return sess.run(model['input']), data_list
+
+    mixed_image = sess.run(model['input'])
+
+    sess.close()
+
+    return mixed_image, data_list
 
 
 def compareStyles(c_path, styles_path):
     total_losses = []
-    content_path = 'content-img/' + c_path + ".jpg"
-    content_img = read_content_image(content_path)
+    # content_path = 'content-img/' + c_path + ".jpg"
+    # content_img = read_content_image(content_path)
+    # Create the save path if it doesn't extis
+    if not os.path.exists(args.save_path):
+        os.mkdir(args.save_path)
+
     for s_path in styles_path:
         print(s_path)
-        style_path = 'style-img/' + s_path + ".jpg"
-        style_img = read_style_image(style_path, content_img)
+        # style_path = 'style-img/' + s_path + ".jpg"
+        # style_img = read_style_image(style_path, content_img)
+
         new_image, data_list = style_transfer(
-            content_img, style_img, ITERATIONS)
+            c_path, s_path, ITERATIONS)
+
+        # new_image, data_list = style_transfer(
+        #     content_img, style_img, ITERATIONS)
 
         # SET path
-        the_path = "result/"
-        filename = the_path + c_path + "-" + s_path + '.png'
+        the_path = args.save_path
+        filename = the_path + '/' + c_path + "-" + s_path + '.png'
         save_image(filename, new_image)
         np.savez(the_path + "/data_list_" + s_path, data_list)
 
 
-# compareStyles("lion", ["kandinsky", "shipwreck", "the_scream",
-#                            "seated-nude", "starry-night", "woman-with-hat-matisse"])
-compareStyles("lion", ["kandinsky"])
-# compareStyles("lion", ["shipwreck"])
-# compareStyles("lion", ["the_scream"])
-# compareStyles("lion", ["seated-nude"])
-# compareStyles("lion", ["starry-night"])
-# compareStyles("lion", ["woman-with-hat-matisse"])
+compareStyles("flower", ["kandinsky", "shipwreck", "the_scream",
+                         "seated-nude", "starry-night", "woman-with-hat-matisse"])
+# compareStyles("coast", ["kandinsky"])
+# compareStyles("coast", ["shipwreck"])
+# compareStyles("coast", ["the_scream"])
+# compareStyles("coast", ["seated-nude"])
+# compareStyles("coast", ["starry-night"])
+# compareStyles("coast", ["woman-with-hat-matisse"])
