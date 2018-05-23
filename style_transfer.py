@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 ########## CONSTANTS ##########
-MAX_SIZE = 300
+MAX_SIZE = 600
 ALPHA = 100  # Weight on style loss.
 BETA = 5  # Weight on content loss.
 GAMMA = 90  # Cross loss weight
@@ -353,10 +353,11 @@ def compareStyles(c_path, styles_path):
         np.savez(the_path + "/data_list_" + s_path, data_list)
 
 
-# compareStyles("golden_gate", ["kandinsky", "shipwreck", "the_scream","seated-nude", "starry-night", "woman-with-hat-matisse"])
+compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
+                           "shipwreck", "the_scream", "woman-with-hat-matisse"])
 # compareStyles("coast", ["kandinsky"])
 # compareStyles("coast", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
 # compareStyles("coast", ["seated-nude"])
-compareStyles("coast", ["starry-night"])
+# compareStyles("coast", ["starry-night"])
 # compareStyles("coast", ["woman-with-hat-matisse"])
