@@ -8,9 +8,9 @@ import numpy as np
 import tensorflow as tf
 
 ########## CONSTANTS ##########
-MAX_SIZE = 600
+MAX_SIZE = 300
 ALPHA = 100  # Weight on style loss.
-BETA = 5  # Weight on content loss.
+BETA = 1  # Weight on content loss.
 GAMMA = 90  # Cross loss weight
 ITERATIONS = 1000  # Number of iterations to run.
 
@@ -55,6 +55,16 @@ def read_content_image(path):
     # Input to the VGG model expects the mean to be subtracted.
     img = img - MEAN_VALUES
     return img
+
+
+def white_noise_start_img(img):
+
+    _, h, w, _ = img.shape
+
+    noise = np.random.rand(1, h, w, 3) * 255
+    noise -= MEAN_VALUES
+
+    return noise
 
 
 def read_style_image(path, content_img):
@@ -160,6 +170,7 @@ def content_loss_func(sess, model):
     # Return the tensor for content loss
     return content_loss
 
+
 # For softer features, increase weight of higher layers
 # For sharper features, increase weight of lower layer
 STYLE_LAYERS = [
@@ -222,6 +233,7 @@ def style_transfer(c_path, s_path, iterations):
     style_img = read_style_image(style_path, content_img)
 
     input_image = content_img
+    # input_image = white_noise_start_img(content_img)
 
     sess = tf.InteractiveSession()
     model = load_vgg_model(VGG_MODEL, input_image)
@@ -233,7 +245,7 @@ def style_transfer(c_path, s_path, iterations):
     # Construct content_loss for content image
     sess.run(model['input'].assign(content_img))
     content_loss = content_loss_func(sess, model)
-    
+
     # Construct style_loss using style_image.
     sess.run(model['input'].assign(style_img))
     style_loss = style_loss_func(sess, model)
@@ -276,7 +288,7 @@ def style_transfer(c_path, s_path, iterations):
         cross_loss_list.append(sess.run(cross_loss))
         if it % 100 == 0:
             print(it)
-        if it % 500 == 0 and it != 0:
+        if it % 100 == 0 and it != 0:
             if args.save_intermediate:
                 print("Save!")
                 mixed_image = sess.run(model['input'])
@@ -317,10 +329,11 @@ def compareStyles(c_path, styles_path):
 global args
 args = parse_args()
 
-compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
-                           "shipwreck", "the_scream", "woman-with-hat-matisse"])
-# compareStyles("coast", ["kandinsky"])
-# compareStyles("coast", ["shipwreck"])
+# compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
+#                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
+
+compareStyles("tubingen", ["kandinsky"])
+# compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
 # compareStyles("coast", ["seated-nude"])
 # compareStyles("coast", ["starry-night"])
