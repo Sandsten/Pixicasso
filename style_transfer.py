@@ -161,10 +161,10 @@ def content_loss_func(sess, model):
     M = p.shape[1] * p.shape[2]
 
     # Loss function from paper, equation (1)
-    content_loss = 0.5 * tf.reduce_sum(tf.pow(x - p, 2))
+    # content_loss = 0.5 * tf.reduce_sum(tf.pow(x - p, 2))
 
     # Option (2)
-    # content_loss = (1 / (N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
+    content_loss = (1 / (N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
 
     # Option (3)
     # content_loss = (1 / (2 * N**0.5 * M**0.5)) * \
@@ -271,7 +271,7 @@ def style_transfer(c_path, s_path, iterations):
     # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
     # layers. Then we minimize the total_loss, which is the equation 7.
-    optimizer = tf.train.AdamOptimizer(2.0)
+    optimizer = tf.train.AdamOptimizer(1.0)
     train_step = optimizer.minimize(total_loss)
 
     # The AdamOptimizer adds new variables that has to be initialized
