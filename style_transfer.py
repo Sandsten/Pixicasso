@@ -12,7 +12,7 @@ MAX_SIZE = 300
 ALPHA = 1   # Weight on content loss.
 BETA = 100  # Weight on style loss.
 GAMMA = 90  # Cross loss weight
-ITERATIONS = 1000  # Number of iterations to run.
+ITERATIONS = 200  # Number of iterations to run.
 
 # Path to the deep learning model.
 # It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -165,7 +165,7 @@ def content_loss_func(sess, model):
 
     # This normalization constant is supposed to be faster and more commonly
     # used in style loss
-    content_loss = (1 / (4 * N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
+    content_loss = (1 / (1 * N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
 
     # Return the tensor for content loss
     return content_loss
@@ -173,12 +173,21 @@ def content_loss_func(sess, model):
 
 # For softer features, increase weight of higher layers
 # For sharper features, increase weight of lower layer
+# STYLE_LAYERS = [
+#     ('conv1_1', 0.5),
+#     ('conv2_1', 1.0),
+#     ('conv3_1', 1.5),
+#     ('conv4_1', 3.0),
+#     ('conv5_1', 4.0),
+# ]
+
+# Original weights from Gatys
 STYLE_LAYERS = [
-    ('conv1_1', 0.5),
-    ('conv2_1', 1.0),
-    ('conv3_1', 1.5),
-    ('conv4_1', 3.0),
-    ('conv5_1', 4.0),
+    ('conv1_1', 1/5),
+    ('conv2_1', 1/5),
+    ('conv3_1', 1/5),
+    ('conv4_1', 1/5),
+    ('conv5_1', 1/5),
 ]
 
 
@@ -251,12 +260,10 @@ def style_transfer(c_path, s_path, iterations):
     style_loss = style_loss_func(sess, model)
 
     # Instantiate equation 7 of the paper.
-    total_loss = ALPHA * content_loss + BETA * style_loss
+    # total_loss = ALPHA * content_loss + BETA * style_loss
 
     # Our own variations of the total_loss function
-    # total_loss = ALPHA * content_loss + BETA * style_loss - BETA * cross_loss
-    # total_loss = ALPHA * content_loss + BETA * style_loss - ALPHA * cross_loss
-    # total_loss = ALPHA * content_loss + BETA * style_loss - GAMMA * cross_loss
+    total_loss = ALPHA * content_loss + BETA * style_loss - GAMMA * cross_loss
 
     # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
@@ -332,9 +339,9 @@ args = parse_args()
 # compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
 #                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
 
-compareStyles("tubingen", ["kandinsky"])
+# compareStyles("tubingen", ["kandinsky"])
 # compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
-# compareStyles("coast", ["seated-nude"])
+compareStyles("tubingen", ["seated-nude"])
 # compareStyles("coast", ["starry-night"])
 # compareStyles("coast", ["woman-with-hat-matisse"])
