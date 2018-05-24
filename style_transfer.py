@@ -7,12 +7,6 @@ import argparse
 import numpy as np
 import tensorflow as tf
 
-########## CONSTANTS ##########
-MAX_SIZE = 400
-ALPHA = 1   # Weight on content loss.
-BETA = 100  # Weight on style loss.
-GAMMA = 90  # Cross loss weight
-ITERATIONS = 1000  # Number of iterations.
 
 # Path to VGG model
 # Downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
@@ -176,7 +170,7 @@ def content_loss_func(sess, model):
 
 # For softer features, increase weight of higher layers
 # For sharper features, increase weight of lower layer
-# Original weights from Gatys
+# Original weights from Gatys paper
 STYLE_LAYERS = [
     ('conv1_1', 1/5),
     ('conv2_1', 1/5),
@@ -230,6 +224,10 @@ def style_loss_func(sess, model):
 
 
 def style_transfer(c_path, s_path, iterations):
+    """
+    Perform style transfer from image at s_path, to image at c_path.
+    For said number of iterations.
+    """
     content_path = 'content-img/' + c_path + ".jpg"
     content_img = read_content_image(content_path)
 
@@ -308,6 +306,10 @@ def style_transfer(c_path, s_path, iterations):
 
 
 def compareStyles(c_path, styles_path):
+    """
+    Saves all generated images and their
+    different losses
+    """
     total_losses = []
 
     # Create the save path if it doesn't extis
@@ -326,17 +328,71 @@ def compareStyles(c_path, styles_path):
         np.savez(the_path + "/data_list_" + s_path, data_list)
 
 
+def getBestStyleFit(c_path, styles_path):
+    """
+    Finds the style that gives the lowest content loss
+    and saves it.
+    """
+    choices = []
+
+    # Create the save path if it doesn't extis
+    if not os.path.exists(args.save_path):
+        os.mkdir(args.save_path)
+
+    # Go through all styles
+    for s_path in styles_path:
+        print(s_path)
+
+        image, data_list = style_transfer(
+            c_path, s_path, ITERATIONS)
+
+        # Get the final content loss
+        content_loss = data_list['content_loss'][-1]
+        print(s_path + " " + str(content_loss))
+
+        # Add the generated image to our potential choices
+        choices.append(
+            {'image': image, 'name': s_path, 'content_loss': content_loss})
+
+    print("Content losses for all applied styles")
+    for image in choices:
+        print(image['name'] + " : " + str(image['content_loss']))
+
+    # Find the image with the lowest content loss
+    best = choices[0]
+    for image in choices:
+        if image['content_loss'] < best['content_loss']:
+            best = image
+
+    print("Best style: " + best['name'])
+
+    # Save the image with the lowest content loss
+    the_path = args.save_path
+    filename = the_path + '/' + c_path + "-" + best['name'] + '.png'
+    save_image(filename, best['image'])
+
+
 
 ########## MAIN FUNCTION ##########
+MAX_SIZE = 100  # Max image size
+ALPHA = 5   # Weight on content loss.
+BETA = 100  # Weight on style loss.
+GAMMA = 90  # Cross loss weight
+ITERATIONS = 50  # Number of iterations.
+
 global args
 args = parse_args()
 
 # compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
 #                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
 
+# getBestStyleFit("tubingen", ["starry-night", "seated-nude"])
+getBestStyleFit("tubingen", ["starry-night", "seated-nude", "kandinsky",
+                             "shipwreck", "the_scream", "woman-with-hat-matisse"])
+
 # compareStyles("tubingen", ["kandinsky"])
 # compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
 # compareStyles("tubingen", ["seated-nude"])
-compareStyles("tubingen", ["starry-night"])
+# compareStyles("tubingen", ["starry-night"])
 # compareStyles("coast", ["woman-with-hat-matisse"])
