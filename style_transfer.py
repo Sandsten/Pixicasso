@@ -8,9 +8,9 @@ import numpy as np
 import tensorflow as tf
 
 ########## CONSTANTS ##########
-MAX_SIZE = 600
-ALPHA = 100  # Weight on style loss.
-BETA = 5  # Weight on content loss.
+MAX_SIZE = 300
+ALPHA = 1   # Weight on content loss.
+BETA = 100  # Weight on style loss.
 GAMMA = 90  # Cross loss weight
 ITERATIONS = 1000  # Number of iterations to run.
 
@@ -251,12 +251,12 @@ def style_transfer(c_path, s_path, iterations):
     style_loss = style_loss_func(sess, model)
 
     # Instantiate equation 7 of the paper.
-    total_loss = BETA * content_loss + ALPHA * style_loss
+    total_loss = ALPHA * content_loss + BETA * style_loss
 
     # Our own variations of the total_loss function
-    # total_loss = BETA * content_loss + ALPHA * style_loss - BETA * cross_loss
-    # total_loss = BETA * content_loss + ALPHA * style_loss - ALPHA * cross_loss
-    # total_loss = BETA * content_loss + ALPHA * style_loss - GAMMA * cross_loss
+    # total_loss = ALPHA * content_loss + BETA * style_loss - BETA * cross_loss
+    # total_loss = ALPHA * content_loss + BETA * style_loss - ALPHA * cross_loss
+    # total_loss = ALPHA * content_loss + BETA * style_loss - GAMMA * cross_loss
 
     # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
@@ -332,8 +332,8 @@ args = parse_args()
 # compareStyles("tubingen", ["starry-night", "seated-nude", "kandinsky",
 #                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
 
-# compareStyles("tubingen", ["kandinsky"])
-compareStyles("tubingen", ["shipwreck"])
+compareStyles("tubingen", ["kandinsky"])
+# compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
 # compareStyles("coast", ["seated-nude"])
 # compareStyles("coast", ["starry-night"])
