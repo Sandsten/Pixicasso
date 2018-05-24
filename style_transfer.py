@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 ########## CONSTANTS ##########
-MAX_SIZE = 300
+MAX_SIZE = 400
 ALPHA = 1   # Weight on content loss.
 BETA = 100  # Weight on style loss.
 GAMMA = 90  # Cross loss weight
@@ -260,10 +260,10 @@ def style_transfer(c_path, s_path, iterations):
     style_loss = style_loss_func(sess, model)
 
     # Instantiate equation 7 of the paper.
-    # total_loss = ALPHA * content_loss + BETA * style_loss
+    total_loss = ALPHA * content_loss + BETA * style_loss
 
     # Our own variations of the total_loss function
-    total_loss = ALPHA * content_loss + BETA * style_loss - GAMMA * cross_loss
+    # total_loss = ALPHA * content_loss + BETA * style_loss - GAMMA * cross_loss
 
     # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
@@ -342,6 +342,6 @@ args = parse_args()
 # compareStyles("tubingen", ["kandinsky"])
 # compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
-compareStyles("tubingen", ["seated-nude"])
-# compareStyles("coast", ["starry-night"])
+# compareStyles("tubingen", ["seated-nude"])
+compareStyles("tubingen", ["starry-night"])
 # compareStyles("coast", ["woman-with-hat-matisse"])
