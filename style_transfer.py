@@ -104,8 +104,8 @@ def load_vgg_model(path, input_image):
 
     def conv2d_relu(prev_layer, layer, layer_name):
         """
-        Return the Conv2D + RELU layer using the weights, biases from the VGG
-        model at 'layer'.
+        Return the convolutional layer followed by a ReLu layer using 
+        the weights and biases from the VGG model at 'layer'.
         """
         W, b = get_weights(layer, layer_name)
         W = tf.constant(W)
@@ -176,14 +176,6 @@ def content_loss_func(sess, model):
 
 # For softer features, increase weight of higher layers
 # For sharper features, increase weight of lower layer
-# STYLE_LAYERS = [
-#     ('conv1_1', 0.5),
-#     ('conv2_1', 1.0),
-#     ('conv3_1', 1.5),
-#     ('conv4_1', 3.0),
-#     ('conv5_1', 4.0),
-# ]
-
 # Original weights from Gatys
 STYLE_LAYERS = [
     ('conv1_1', 1/5),
@@ -271,7 +263,7 @@ def style_transfer(c_path, s_path, iterations):
     # Initialize an optimizer that will minimize our loss
     # The content is built from one layer, while the style is from five
     # layers. Then we minimize the total_loss, which is the equation 7.
-    optimizer = tf.train.AdamOptimizer(1.0)
+    optimizer = tf.train.AdamOptimizer(2.0)
     train_step = optimizer.minimize(total_loss)
 
     # The AdamOptimizer adds new variables that has to be initialized
