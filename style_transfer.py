@@ -12,10 +12,10 @@ MAX_SIZE = 400
 ALPHA = 1   # Weight on content loss.
 BETA = 100  # Weight on style loss.
 GAMMA = 90  # Cross loss weight
-ITERATIONS = 200  # Number of iterations to run.
+ITERATIONS = 1000  # Number of iterations.
 
-# Path to the deep learning model.
-# It can be downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
+# Path to VGG model
+# Downloaded from http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
 VGG_MODEL = 'imagenet-vgg-verydeep-19.mat'
 
 # Mean of the training data used for the VGG. We need to normalize our input images with that values
@@ -161,11 +161,14 @@ def content_loss_func(sess, model):
     M = p.shape[1] * p.shape[2]
 
     # Loss function from paper, equation (1)
-    # content_loss = 0.5 * tf.reduce_sum(tf.pow(x - p, 2))
+    content_loss = 0.5 * tf.reduce_sum(tf.pow(x - p, 2))
 
-    # This normalization constant is supposed to be faster and more commonly
-    # used in style loss
-    content_loss = (1 / (1 * N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
+    # Option (2)
+    # content_loss = (1 / (N * M)) * tf.reduce_sum(tf.pow(x - p, 2))
+
+    # Option (3)
+    # content_loss = (1 / (2 * N**0.5 * M**0.5)) * \
+    #     tf.reduce_sum(tf.pow(x - p, 2))
 
     # Return the tensor for content loss
     return content_loss
