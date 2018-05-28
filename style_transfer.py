@@ -103,6 +103,7 @@ def load_vgg_model(path, input_image):
         """
         W, b = get_weights(layer, layer_name)
         W = tf.constant(W)
+        # Convert from (64,1) to (64,) with reshape to work with addition
         b = tf.constant(np.reshape(b, (b.size)))
         return tf.nn.relu(tf.nn.conv2d(
             prev_layer, filter=W, strides=[1, 1, 1, 1], padding='SAME') + b)
@@ -184,7 +185,9 @@ def style_loss_func(sess, model):
 
     def gram_matrix(F, N, M):
         # The gram matrix, equation (3) in the paper
+        # F has shape (1, Height, Width, feature maps)
         Ft = tf.reshape(F, (M, N))
+        # New shape is (M_l, N_l)
         return tf.matmul(tf.transpose(Ft), Ft)
 
     E = []  # E holds all the E_l from the paper, equation (4)
@@ -374,11 +377,11 @@ def getBestStyleFit(c_path, styles_path):
 
 
 ########## MAIN FUNCTION ##########
-MAX_SIZE = 100  # Max image size
+MAX_SIZE = 200  # Max image size
 ALPHA = 5   # Weight on content loss.
 BETA = 100  # Weight on style loss.
 GAMMA = 90  # Cross loss weight
-ITERATIONS = 50  # Number of iterations.
+ITERATIONS = 300  # Number of iterations.
 
 global args
 args = parse_args()
@@ -387,12 +390,12 @@ args = parse_args()
 #                            "shipwreck", "the_scream", "woman-with-hat-matisse"])
 
 # getBestStyleFit("tubingen", ["starry-night", "seated-nude"])
-getBestStyleFit("tubingen", ["starry-night", "seated-nude", "kandinsky",
-                             "shipwreck", "the_scream", "woman-with-hat-matisse"])
+# getBestStyleFit("tubingen", ["starry-night", "seated-nude", "kandinsky",
+#  "shipwreck", "the_scream", "woman-with-hat-matisse"])
 
 # compareStyles("tubingen", ["kandinsky"])
 # compareStyles("tubingen", ["shipwreck"])
 # compareStyles("coast", ["the_scream"])
 # compareStyles("tubingen", ["seated-nude"])
-# compareStyles("tubingen", ["starry-night"])
+compareStyles("tubingen", ["starry-night"])
 # compareStyles("coast", ["woman-with-hat-matisse"])
