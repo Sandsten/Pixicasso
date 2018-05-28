@@ -186,6 +186,7 @@ def style_loss_func(sess, model):
     def gram_matrix(F, N, M):
         # The gram matrix, equation (3) in the paper
         # F has shape (1, Height, Width, feature maps)
+        # Reshape use Height, Width -> M, featuremaps -> N
         Ft = tf.reshape(F, (M, N))
         # New shape is (M_l, N_l)
         return tf.matmul(tf.transpose(Ft), Ft)
